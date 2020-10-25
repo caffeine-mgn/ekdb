@@ -1,0 +1,151 @@
+apply plugin: 'kotlin-multiplatform'
+apply plugin: 'kotlinx-serialization'
+apply plugin: 'application'
+
+kotlin {
+    def nativeEntryPoint = 'com.ekdb.main'
+    linuxX64 { // Use your target instead.
+        binaries {
+            executable {
+                entryPoint = nativeEntryPoint
+            }
+        }
+    }
+
+    linuxArm32Hfp { // Use your target instead.
+        binaries {
+            executable {
+                entryPoint = nativeEntryPoint
+            }
+        }
+    }
+
+    mingwX64 { // Use your target instead.
+        binaries {
+            executable {
+                entryPoint = nativeEntryPoint
+//                linkerOpts("-Wl,--subsystem,windows")
+            }
+        }
+    }
+
+    mingwX86 { // Use your target instead.
+        binaries {
+            executable {
+                entryPoint = nativeEntryPoint
+//                linkerOpts("-Wl,--subsystem,windows")
+            }
+        }
+    }
+    jvm {
+        compilations.all {
+            kotlinOptions {
+                jvmTarget = '1.8'
+            }
+        }
+    }
+
+    sourceSets {
+        commonMain {
+            dependencies {
+                implementation kotlin("stdlib")
+                api "pw.binom.io:core:$binom_version"
+                api "pw.binom.io:file:$binom_version"
+                api "pw.binom.io:db:$binom_version"
+                api "pw.binom.io:sqlite:$binom_version"
+                api "pw.binom.io:process:$binom_version"
+                api "pw.binom.io:httpClient:$binom_version"
+                api "pw.binom.io:httpServer:$binom_version"
+            }
+        }
+
+        nativeMain {
+            dependencies {
+                dependsOn commonMain
+            }
+        }
+
+        mingwX64Main {
+            dependencies {
+                dependsOn nativeMain
+            }
+        }
+
+        mingwX86Main {
+            dependencies {
+                dependsOn mingwX64Main
+            }
+        }
+
+        commonTest {
+            dependencies {
+                implementation kotlin('test-common')
+                implementation kotlin('test-annotations-common')
+            }
+        }
+
+        linuxX64Main {
+            dependencies {
+                dependsOn nativeMain
+            }
+        }
+
+        linuxArm32HfpMain {
+            dependencies {
+                dependsOn linuxX64Main
+            }
+        }
+
+        jvmMain {
+            dependencies {
+                dependsOn commonMain
+                api kotlin("reflect")
+//                runtime group: 'org.jetbrains.kotlin', name: 'kotlin-reflect', version: '1.3.72'
+            }
+        }
+
+        jvmTest {
+            dependencies {
+                implementation group: 'junit', name: 'junit', version: junit_version
+            }
+        }
+
+        sourceSets.all {
+            languageSettings {
+                progressiveMode = true
+            }
+        }
+    }
+}
+
+jvmJar {
+    with {
+        from {
+            (configurations.jvmRuntimeClasspath).collect {
+                it.isDirectory() ? it : zipTree(it)
+            }
+        } {
+            exclude "META-INF/*.SF"
+            exclude "META-INF/*.DSA"
+            exclude "META-INF/*.RSA"
+        }
+    }
+    manifest {
+        attributes 'Main-Class': "com.ekdb.main.JvmMain"
+        attributes 'TL-Version': project.version
+    }
+
+    archiveName = "ekdb.jar"
+}
+
+task runMainExecutableJvm(dependsOn: jvmJar, group: "run") {
+    doLast {
+        def args1 = [jvmJar.archiveFile.get()]
+        args1.addAll(System.getenv("ARGS")?.split(" ") ?: ["-port=9090", "-user=admin:admin"])
+        javaexec { main = "-jar"; args args1 }
+    }
+}
+
+application {
+    mainClass = 'com.ekdb.main.JvmMain'
+}
