@@ -7,6 +7,9 @@ import pw.binom.io.use
 import pw.binom.writeInt
 import pw.binom.writeLong
 
+/**
+ * Индекс на базе хэш таблиц. Реализация для хранения в памяти. [FileHashIndex] - реализация индекса хэш таблтиц для файлов
+ */
 class HashMemIndex(val columns: IntArray, override val unique: Boolean, bucketSize: Int) : MemIndex {
 
     init {

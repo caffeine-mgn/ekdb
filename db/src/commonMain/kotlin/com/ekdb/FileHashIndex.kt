@@ -7,6 +7,9 @@ import pw.binom.io.file.read
 import pw.binom.readInt
 import pw.binom.readLong
 
+/**
+ * Индекс на базе хэш таблиц. Реализация для хранения в файле. [HashMemIndex] - реализация индекса хэш таблтиц в памяти
+ */
 class FileHashIndex(val file: File) : FileIndex, Closeable {
     private val channel = file.read()
     private val buf = ByteBuffer.alloc(8)
